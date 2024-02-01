@@ -41,5 +41,5 @@ certs:
 .PHONY: clean
 clean:
 	$(DOCKER) compose down --volumes --remove-orphans
-	$(DOCKER) compose -f docker-compose.yml down --volumes --remove-orphans
+	$(DOCKER) compose -f docker-compose.yaml down --volumes --remove-orphans
 	- rm -rf $(WORKDIR)/cert
