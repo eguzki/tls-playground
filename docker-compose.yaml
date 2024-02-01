@@ -1,0 +1,19 @@
+---
+version: '3.8'
+services:
+  tls.example.com:
+    image: alpine/socat:1.7.4.4
+    container_name: tls.example.com
+    command: "-v openssl-listen:443,reuseaddr,fork,cert=/etc/pki/tls.example.com.pem,verify=0 TCP:upstream:80"
+    expose:
+      - "443"
+    ports:
+      - "443:443"
+    restart: unless-stopped
+    volumes:
+      - ./cert/tls.example.com.pem:/etc/pki/tls.example.com.pem
+  upstream:
+    image: kennethreitz/httpbin
+    container_name: upstream
+    expose:
+      - "80"
