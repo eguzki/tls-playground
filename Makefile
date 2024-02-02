@@ -15,7 +15,7 @@ server:
 clientcerts:
 	openssl req -newkey rsa:4096 -sha256 -nodes \
 		-subj "/CN=$(DOMAIN)" \
-		-addext 'subjectAltName=DNS:$(DOMAIN)' \
+		-addext 'subjectAltName = DNS:$(DOMAIN)' \
 		-keyout $(DOMAIN).key \
 		-out $(DOMAIN).csr
 	chmod +r $(DOMAIN).key
@@ -25,7 +25,7 @@ clientcerts:
 		-CAkey $(WORKDIR)/cert/rootCA.key \
 		-CAcreateserial \
 		-out $(DOMAIN).crt \
-		-days 500 \
+		-days 365 \
 		-sha256
 	openssl x509 -noout -text -in $(DOMAIN).crt
 
@@ -35,8 +35,13 @@ $(WORKDIR)/cert:
 $(WORKDIR)/cert/rootCA.pem $(WORKDIR)/cert/rootCA.key:
 	$(MAKE) -f $(WORKDIR)/Makefile $(WORKDIR)/cert
 	openssl genrsa -out $(WORKDIR)/cert/rootCA.key 2048
-	openssl req -batch -new -x509 -nodes -key $(WORKDIR)/cert/rootCA.key -sha256 -days 1024 -out $(WORKDIR)/cert/rootCA.pem
-	openssl req -batch -subj '/CN=caeguzki' -addext "subjectAltName = DNS:caeguzki" -new -x509 -nodes -key $(WORKDIR)/cert/rootCA.key -sha256 -days 1024 -out $(WORKDIR)/cert/rootCA.pem
+	openssl req -batch -new -x509 -nodes -sha256 \
+		-key $(WORKDIR)/cert/rootCA.key \
+		-days 365 \
+		-subj '/CN=caeguzki' \
+		-addext "subjectAltName = DNS:caeguzki" \
+		-out $(WORKDIR)/cert/rootCA.pem
+	openssl x509 -noout -text -in $(WORKDIR)/cert/rootCA.pem
 
 $(WORKDIR)/cert/tls.example.com.key $(WORKDIR)/cert/tls.example.com.crt:
 	$(MAKE) -f $(WORKDIR)/Makefile $(WORKDIR)/cert/rootCA.pem $(WORKDIR)/cert/rootCA.key
