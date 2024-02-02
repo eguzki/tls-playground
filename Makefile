@@ -15,7 +15,6 @@ server:
 clientcerts:
 	openssl req -subj '/CN=$(DOMAIN)'  -newkey rsa:4096 -nodes \
 			-sha256 \
-			-days 3650 \
 			-keyout $(DOMAIN).key \
 			-out $(DOMAIN).csr
 	chmod +r $(DOMAIN).key
@@ -27,6 +26,7 @@ $(WORKDIR)/cert:
 $(WORKDIR)/cert/rootCA.pem $(WORKDIR)/cert/rootCA.key: $(WORKDIR)/cert
 	openssl genrsa -out $(WORKDIR)/cert/rootCA.key 2048
 	openssl req -batch -new -x509 -nodes -key $(WORKDIR)/cert/rootCA.key -sha256 -days 1024 -out $(WORKDIR)/cert/rootCA.pem
+	openssl req -batch -subj '/CN=caeguzki' -new -x509 -nodes -key $(WORKDIR)/cert/rootCA.key -sha256 -days 1024 -out $(WORKDIR)/cert/rootCA.pem
 
 $(WORKDIR)/cert/tls.example.com.key $(WORKDIR)/cert/tls.example.com.crt: $(WORKDIR)/cert/rootCA.pem $(WORKDIR)/cert/rootCA.key
 	$(MAKE) clientcerts -C $(WORKDIR)/cert -f $(WORKDIR)/Makefile DOMAIN=tls.example.com
