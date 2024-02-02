@@ -13,30 +13,41 @@ server:
 	$(DOCKER) compose -f docker-compose.yaml up --attach tls.example.com
 
 clientcerts:
-	openssl req -subj '/CN=$(DOMAIN)'  -newkey rsa:4096 -nodes \
-			-sha256 \
-			-keyout $(DOMAIN).key \
-			-out $(DOMAIN).csr
+	openssl req -newkey rsa:4096 -sha256 -nodes \
+		-subj "/CN=$(DOMAIN)" \
+		-addext 'subjectAltName=DNS:$(DOMAIN)' \
+		-keyout $(DOMAIN).key \
+		-out $(DOMAIN).csr
 	chmod +r $(DOMAIN).key
-	openssl x509 -req -in $(DOMAIN).csr -CA $(WORKDIR)/cert/rootCA.pem -CAkey $(WORKDIR)/cert/rootCA.key -CAcreateserial -out $(DOMAIN).crt -days 500 -sha256
+	openssl x509 -req \
+		-in $(DOMAIN).csr \
+		-CA $(WORKDIR)/cert/rootCA.pem \
+		-CAkey $(WORKDIR)/cert/rootCA.key \
+		-CAcreateserial \
+		-out $(DOMAIN).crt \
+		-days 500 \
+		-sha256
+	openssl x509 -noout -text -in $(DOMAIN).crt
 
 $(WORKDIR)/cert:
 	mkdir -p cert
 
-$(WORKDIR)/cert/rootCA.pem $(WORKDIR)/cert/rootCA.key: $(WORKDIR)/cert
+$(WORKDIR)/cert/rootCA.pem $(WORKDIR)/cert/rootCA.key:
+	$(MAKE) -f $(WORKDIR)/Makefile $(WORKDIR)/cert
 	openssl genrsa -out $(WORKDIR)/cert/rootCA.key 2048
 	openssl req -batch -new -x509 -nodes -key $(WORKDIR)/cert/rootCA.key -sha256 -days 1024 -out $(WORKDIR)/cert/rootCA.pem
-	openssl req -batch -subj '/CN=caeguzki' -new -x509 -nodes -key $(WORKDIR)/cert/rootCA.key -sha256 -days 1024 -out $(WORKDIR)/cert/rootCA.pem
+	openssl req -batch -subj '/CN=caeguzki' -addext "subjectAltName = DNS:caeguzki" -new -x509 -nodes -key $(WORKDIR)/cert/rootCA.key -sha256 -days 1024 -out $(WORKDIR)/cert/rootCA.pem
 
-$(WORKDIR)/cert/tls.example.com.key $(WORKDIR)/cert/tls.example.com.crt: $(WORKDIR)/cert/rootCA.pem $(WORKDIR)/cert/rootCA.key
+$(WORKDIR)/cert/tls.example.com.key $(WORKDIR)/cert/tls.example.com.crt:
+	$(MAKE) -f $(WORKDIR)/Makefile $(WORKDIR)/cert/rootCA.pem $(WORKDIR)/cert/rootCA.key
 	$(MAKE) clientcerts -C $(WORKDIR)/cert -f $(WORKDIR)/Makefile DOMAIN=tls.example.com
 
-$(WORKDIR)/cert/tls.example.com.pem: $(WORKDIR)/cert/tls.example.com.key $(WORKDIR)/cert/tls.example.com.crt
-	cat $(WORKDIR)/cert/tls.example.com.key $(WORKDIR)/cert/tls.example.com.crt >$@
+$(WORKDIR)/cert/tls.example.com.pem:
+	$(MAKE) -f $(WORKDIR)/Makefile $(WORKDIR)/cert/tls.example.com.key $(WORKDIR)/cert/tls.example.com.crt
+	cat $(WORKDIR)/cert/tls.example.com.key $(WORKDIR)/cert/tls.example.com.crt $(WORKDIR)/cert/rootCA.pem >$@
 
 .PHONY: certs
-certs:
-	$(MAKE) $(WORKDIR)/cert/tls.example.com.pem -f $(WORKDIR)/Makefile
+certs: clean $(WORKDIR)/cert/tls.example.com.pem
 
 .PHONY: clean
 clean:

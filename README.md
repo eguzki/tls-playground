@@ -186,7 +186,6 @@ curl --resolve tls.example.com:443:127.0.0.1 -v --cacert cert/rootCA.pem "https:
 openssl s_client -showcerts -servername tls.example.com -connect 127.0.0.1:443 -CAfile cert/rootCA.pem
 ```
 
-
 ## Clean env
 
 ```sh
